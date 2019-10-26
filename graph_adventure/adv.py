@@ -95,21 +95,29 @@ def findPath():
             if len(last_room):
                 # add last room to appropriate exit key 
                 player_visited[this_room.id][ent_direction] = last_room[-1]
-            for direction, room in player_visited[this_room.id].items():
-                if room == "?":
-                    # move player to undiscovered room
-                    player.travel(direction)
-                    # add new room to direction key in previous room
-                    player_visited[this_room.id][direction] = player.currentRoom.id
-                    # add direction traveled to path
-                    path.append(direction)
-                    last_room.append(this_room.id)
-                    break
-            else:
-                rand_dir = random.choice(exits)
-                player.travel(rand_dir)
-                path.append(rand_dir)
+                    # check if any exits have unknown rooms
+            if "?" in list(player_visited[this_room.id].values()):
+                # create list of unexplored exit directions
+                unexplored = [key for key, value in player_visited[this_room.id].items() if value == "?"]
+                # pick an exit direction at random
+                move_dir = random.choice(unexplored)
+                # add move to path
+                path.append(move_dir)
+                # move to that room
+                player.travel(move_dir)
+                # add last room to stack
                 last_room.append(this_room.id)
+
+                player_visited[this_room.id][move_dir] = player.currentRoom.id
+            else:
+                last_room_dir = ""
+                for direction, room in player_visited[this_room.id].items():
+                    if room == last_room[-1]:
+                        last_room_dir = direction
+                last_room.pop()
+                player.travel(last_room_dir)
+                path.append(last_room_dir)
+
     return path                
 
 traversalPath = findPath()
