@@ -34,39 +34,55 @@ def format_helper(in_list):
         obj[i] = '?'
     return obj
 
+def opposite_direction(direction):
+    opposites = {
+        "n": "s",
+        "s": "n",
+        "e": "w",
+        "w": "e"
+    }
+    return opposites[direction]
+
 
 def findPath():
     player_visited = {}
     path = []
     player = Player("Bot", world.startingRoom)
     player.currentRoom = world.startingRoom
+    last_room = []
+    ent_direction = ""
 
     # check for all rooms visited
     while len(player_visited) < len(roomGraph):
         # put player's current location in memory
         this_room = player.currentRoom
         exits = this_room.getExits()
+        # last direction player traveled
+        if len(path) > 0:
+            ent_direction = opposite_direction(path[-1])
         # check if player has visited this room
         if this_room.id in list(player_visited):
-            # if it is, loop through the possible exits
-            for direction, room in player_visited[this_room.id].items():
-                # if player does not know if they've been in this room
-                if room == "?":
-                    # add the direction they are about to travel to the traversal path
-                    path.append(direction)
-                    # move to the undiscovered room
-                    player.travel(direction)
-                    # associate this room with the exit direction of the last room
-                    player_visited[this_room.id][direction] = player.currentRoom.id
-                    # end for loop
-                    break
+            # add last room to known exits for current room
+            if player_visited[this_room.id][ent_direction] == "?":
+                player_visited[this_room.id][ent_direction] = last_room[-1]
+
+            if "?" in list(player_visited[this_room.id].values()):
+                unexplored = [key for key, value in player_visited[this_room.id].items() if value == "?"]
+                move_dir = random.choice(unexplored)
+                path.append(move_dir)
+                player.travel(move_dir)
+                last_room.append(this_room.id)
+                player_visited[this_room.id][move_dir] = player.currentRoom.id
             else:
-                # pick a random exit direction
-                rand_exit = random.choice(exits)
-                # add direction to travel path
-                path.append(rand_exit)
-                # move in the random direction
-                player.travel(rand_exit)
+                last_room_dir = ""
+                for direction, room in player_visited[this_room.id].items():
+                    if room == last_room[-1]:
+                        last_room_dir = direction
+                last_room.pop()
+                player.travel(last_room_dir)
+                path.append(last_room_dir)
+
+
 
         else:
             player_visited[this_room.id] = format_helper(exits)
@@ -78,11 +94,13 @@ def findPath():
                     player_visited[this_room.id][direction] = player.currentRoom.id
                     # add direction traveled to path
                     path.append(direction)
+                    last_room.append(this_room.id)
                     break
             else:
                 rand_dir = random.shuffle(exits)[0]
                 player.travel(rand_dir)
                 path.append(rand_dir)
+                last_room.append(this_room.id)
     return path                
 
 traversalPath = findPath()
